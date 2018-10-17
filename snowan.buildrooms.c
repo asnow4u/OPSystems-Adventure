@@ -32,6 +32,11 @@ int main(){
     const char dirPath[20] = "./snowan.rooms/";
     srand(time(NULL));
 
+    //Create PID
+    
+    //set dirPath with pid at the end
+
+
     //Attept to open directory and store result in dir
     dir = opendir(dirPath);
 
@@ -106,8 +111,8 @@ int main(){
     }
     
     //As long as files in the array dont have at least 3 connections run the loop
-    //while (testFileConnections(fileArray) == 0){
-    if (testFileConnections(fileArray) == 0){
+    while (testFileConnections(fileArray) == 0){
+    //if (testFileConnections(fileArray) == 0){
 
         //pick random room from array
         randomRoom1 = rand() %7;
@@ -121,24 +126,59 @@ int main(){
        
         //Check randomRoom for connections aready pressent 
         if (connectionNum > 0){
-            //create new array without the connections aready pressent and not including self
-           //char filePath[50];
-           //FILE* file;
-           //file = fopen(fileArray[randomRoom1], "r");
 
-           //Loop through each line in the file
-           //while ((fgets(filePath, 50, file)) != NULL){
+            printf("\nconnectionNum > 0\n");
+
+            char* connectionArray[7];
+            char buffer[50];
+            char roomName[50];
+            FILE* file;
+
+            i = 0;
+            
+            file = fopen(fileArray[randomRoom1], "r");
+            
+            //Allocate space for array for each connection and the name of the room(+1)
+            while (i < connectionNum + 1){
                 
-            //    sscanf(filePath, "%s %s %s", filePath, filePath, filePath);
-            //    printf("%s\n", filePath); //test
-            //}
-        
-            //fclose(file);
+                connectionArray[i] = (char*) malloc(50);
+                i++;
+            }
+         
+            i = 0;
 
-            //check for over 6 connections
+            //Loop through each line in the file
+            //while((fgets(buffer, 50, file)) != NULL){
+            while (i < connectionNum + 1){
+                fscanf(file, "%s %s %s", buffer, buffer, buffer); 
+                
+                printf("buffer: %s\n", buffer);
+
+                //Create Array of aready connected rooms
+                connectionArray[i] = buffer;
+                        
+                i++;
+            }
+            
+            fclose(file);
+
+            i = 0;
+
+            randomRoom2 = rand() %7; 
+            
+            while (i < connectionNum){
+                if (!strcmp(connectionArray[i], fileArray[randomRoom2]) == 1 || getConnectionNum(fileArray[randomRoom2]) > 5 || randomRoom1 == randomRoom2){
+                    i = 0;
+                    randomRoom2 = rand() %7;
+                }
+
+                i++;
+            } 
 
         } else {
            
+            printf("\nConnectionNum == 0\n");//test
+            
             randomRoom2 = rand() %7;
             connectionNum = getConnectionNum(fileArray[randomRoom2]);
 
@@ -149,7 +189,6 @@ int main(){
         }
         
         //Connect the two rooms
-
         writeConnections(fileArray[randomRoom1], fileArray[randomRoom2]);
         writeConnections(fileArray[randomRoom2], fileArray[randomRoom1]);
 
@@ -166,7 +205,7 @@ int main(){
 //Takes room name from file2 and writes it as a connection in file1
 void writeConnections(char* file1, char* file2){
     
-    printf("writeConnections()\n");
+    printf("\nwriteConnections()\n");
 
     char notNeeded[50];
     char room[50];
@@ -206,7 +245,7 @@ void writeConnections(char* file1, char* file2){
 
 int testFileConnections(char** fileArray){
     
-    printf("testFileConnections()\n");
+    printf("\ntestFileConnections()\n");
 
     int count = 0;
     int connectionNum;
@@ -220,9 +259,7 @@ int testFileConnections(char** fileArray){
         if (connectionNum < 3){
             printf("connectionNum is less then 3\n"); //test
             return 0;
-        }
- 
-        printf("\n\n"); //test
+        } 
 
         count++;
     }
@@ -233,30 +270,28 @@ int testFileConnections(char** fileArray){
 
 int getConnectionNum(char* fileName){
      
-    printf("getConnectionNum()\n");
+    printf("\ngetConnectionNum()\n");
 
-    char string[50]; 
+    char c;
     int num = 0;
     FILE* file;
 
     file = fopen(fileName, "r");
+
         
-        //Loop through each line in the file
-        while((fgets(string, 50, file)) != NULL){
-            
-            sscanf(string, "%s", string);
-            printf("%s\n", string); //test
-
-            //Compare string to see if its a connection
-            if (strcmp(string, "CONNECTION") == 0){
-                num++;
-            }
+    //Loop through each line in the file
+    while(!feof(file)){ //redo loop
+          
+        c = fgetc(file);
+        if (c == '\n'){
+            num++;
         }
+    }
 
-        printf("Connections: %d\n", num);
+    printf("Connections: %d\n", num);
 
-        fclose(file);
-        return num;
+    fclose(file);
+    return num;
 }
 
 

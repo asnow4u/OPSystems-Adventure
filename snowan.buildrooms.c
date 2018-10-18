@@ -11,7 +11,7 @@
 
 
 void writeConnections(char*, char*);
-int testFileConnections(char**);
+int testFileConnections(char[7][24]);
 int getConnectionNum(char*);
 void createRooms(int);
 
@@ -22,14 +22,17 @@ int main(){
     int randomRoom1;
     int randomRoom2;
     int connectionNum;
-    
+    char *connectionArray[10];
+    char buffer[50];
+    char roomName[50];
+    FILE* file;
     DIR *dir;
     struct stat sb;
     struct dirent *d;
-    char* fileArray[7];
+    char fileArray[7][24];
     int i = 0;
 
-    const char dirPath[20] = "./snowan.rooms/";
+    char dirPath[20] = "./snowan.rooms/";
     srand(time(NULL));
 
     //Create PID
@@ -67,53 +70,51 @@ int main(){
     if (count > 2){
 
         //Remove room files
-        remove("./snowan.rooms/Thrown_Room");
-        remove("./snowan.rooms/Dinning_Hall");
+        remove("./snowan.rooms/Attic");
+        remove("./snowan.rooms/Basement");
         remove("./snowan.rooms/Armory");
-        remove("./snowan.rooms/Laboratory");
+        remove("./snowan.rooms/Lab");
         remove("./snowan.rooms/Kitchen");
-        remove("./snowan.rooms/Sleeping_Quarters");
-        remove("./snowan.rooms/Gate_House");
-        remove("./snowan.rooms/Great_Hall");
-        remove("./snowan.rooms/Servants_Quarters");
-        remove("./snowan.rooms/Storeroom");
+        remove("./snowan.rooms/Bedroom");
+        remove("./snowan.rooms/Garden");
+        remove("./snowan.rooms/Hallway");
+        remove("./snowan.rooms/Yard");
+        remove("./snowan.rooms/Pantry");
         
     }
-
 
 
     //Loop through and randomly pick 7 rooms
     count = 0;
 
     while (count < 7){
-
+        
         createRooms(count);
         count++;
     }
 
-    //Rest Directory for proper reading
+    //Reset Directory for proper reading
     rewinddir(dir);
-    count = 0;
-   
-
+    count = 0; 
+    
     //Check for which files are in directory and add them to a file Array
     while ((d = readdir (dir)) != NULL){
-        
+         
         if ((!strcmp (d->d_name, ".")) || (!strcmp (d->d_name, ".."))){
         } else {
-        
-            fileArray[count] = malloc (strlen(d->d_name) + strlen(dirPath) +1 );
-            strncpy (fileArray[count], dirPath, strlen(dirPath));
-            strncat (fileArray[count], d->d_name, strlen(d->d_name));
+       
+            strcpy (fileArray[count], dirPath);
+            strcat (fileArray[count], d->d_name);
+            
+            //Add NULL terminator
+            fileArray[count][strlen(dirPath) + strlen(d->d_name) + 1] = '\0';             
             count++; 
         }    
-                        
     }
-    
-    //As long as files in the array dont have at least 3 connections run the loop
-    while (testFileConnections(fileArray) == 0){
-    //if (testFileConnections(fileArray) == 0){
 
+    //As long as files in the array dont have at least 3 connections run loop
+    while (testFileConnections(fileArray) == 0){
+                             
         //pick random room from array
         randomRoom1 = rand() %7;
         connectionNum = getConnectionNum(fileArray[randomRoom1]);
@@ -127,12 +128,13 @@ int main(){
         //Check randomRoom for connections aready pressent 
         if (connectionNum > 0){
 
-            printf("\nconnectionNum > 0\n");
+            i = 0;
 
-            char* connectionArray[7];
-            char buffer[50];
-            char roomName[50];
-            FILE* file;
+            //Reset array
+            while (i < 10){
+                connectionArray[i] = NULL;
+                i++;
+            }
 
             i = 0;
             
@@ -151,51 +153,52 @@ int main(){
             //while((fgets(buffer, 50, file)) != NULL){
             while (i < connectionNum + 1){
                 fscanf(file, "%s %s %s", buffer, buffer, buffer); 
-                
-                printf("buffer: %s\n", buffer);
 
                 //Create Array of aready connected rooms
-                connectionArray[i] = buffer;
+                strcpy(roomName, dirPath);
+                strcat(roomName, buffer);
+                connectionArray[i] =  roomName;
                         
                 i++;
-            }
-            
+            } 
+
+
             fclose(file);
 
             i = 0;
 
             randomRoom2 = rand() %7; 
             
-            while (i < connectionNum){
-                if (!strcmp(connectionArray[i], fileArray[randomRoom2]) == 1 || getConnectionNum(fileArray[randomRoom2]) > 5 || randomRoom1 == randomRoom2){
-                    i = 0;
-                    randomRoom2 = rand() %7;
-                }
-
+            while (i < connectionNum + 1){
+                
+                //Compare random room ro connecting rooms and check number of connections for potential reroll
+                if (strcmp(connectionArray[i], fileArray[randomRoom2]) == 0 || getConnectionNum(fileArray[randomRoom2]) > 5 || randomRoom1 == randomRoom2){
+                                 
+                   i = 0;
+                   randomRoom2 = rand() %7;
+                } 
+                
                 i++;
             } 
 
         } else {
            
-            printf("\nConnectionNum == 0\n");//test
-            
+                        
             randomRoom2 = rand() %7;
             connectionNum = getConnectionNum(fileArray[randomRoom2]);
 
+            //Check number of connections for potential reroll
             while (randomRoom1 == randomRoom2 || connectionNum > 5){
                 randomRoom2 = rand() %7;
                 connectionNum = getConnectionNum(fileArray[randomRoom2]);
-            }
+            } 
         }
         
         //Connect the two rooms
         writeConnections(fileArray[randomRoom1], fileArray[randomRoom2]);
         writeConnections(fileArray[randomRoom2], fileArray[randomRoom1]);
 
-        
-
     }
-
 
     closedir (dir);
 
@@ -205,7 +208,7 @@ int main(){
 //Takes room name from file2 and writes it as a connection in file1
 void writeConnections(char* file1, char* file2){
     
-    printf("\nwriteConnections()\n");
+    //printf("\nwriteConnections()\n");
 
     char notNeeded[50];
     char room[50];
@@ -217,7 +220,7 @@ void writeConnections(char* file1, char* file2){
     file = fopen(file2, "r");
     
     fscanf(file,"%s %s %s", room, room, room);
-    printf("ROOMS: %s\n", room); //test
+    //printf("ROOMS: %s\n", room); //test
 
 
     fclose(file);
@@ -231,7 +234,7 @@ void writeConnections(char* file1, char* file2){
     
     rewind(file);
     
-    while (i < num-1){ //mpt sure if right!!!!!!!!!!!!
+    while (i < num-1){ 
         fscanf(file,"%s %s %s", notNeeded, notNeeded, notNeeded);
         i++;
     }
@@ -243,21 +246,19 @@ void writeConnections(char* file1, char* file2){
 }
 
 
-int testFileConnections(char** fileArray){
+int testFileConnections(char fileArray[7][24]){
     
-    printf("\ntestFileConnections()\n");
-
     int count = 0;
-    int connectionNum;
+    int connectionNum = 0;
+    char* fileName;
 
     //Loop through array
     while (count < 7){
 
         connectionNum = getConnectionNum(fileArray[count]);
-        
+         
         //See if 3 connections exist in file, if not return as failed
         if (connectionNum < 3){
-            printf("connectionNum is less then 3\n"); //test
             return 0;
         } 
 
@@ -270,25 +271,25 @@ int testFileConnections(char** fileArray){
 
 int getConnectionNum(char* fileName){
      
-    printf("\ngetConnectionNum()\n");
-
     char c;
     int num = 0;
-    FILE* file;
+    FILE* file; 
 
     file = fopen(fileName, "r");
-
-        
+    
     //Loop through each line in the file
-    while(!feof(file)){ //redo loop
-          
-        c = fgetc(file);
+    c = getc(file);
+
+    while(c != EOF){ 
+               
         if (c == '\n'){
             num++;
-        }
+        }        
+        c = getc(file);
     }
-
-    printf("Connections: %d\n", num);
+    
+    //Connections not including the first line
+    num--; 
 
     fclose(file);
     return num;
@@ -305,13 +306,13 @@ void createRooms(int count){
 
     switch(randomNum){
         
-        case 1: if (fileCheck("./snowan.rooms/Thrown_Room") == 0){
+        case 1: if (fileCheck("./snowan.rooms/Attic") == 0){
 
                     //Create file
-                    FILE* file = fopen("./snowan.rooms/Thrown_Room", "w"); 
+                    FILE* file = fopen("./snowan.rooms/Attic", "w"); 
                                         
                     //Write to file
-                    fprintf(file, "ROOM NAME: Thrown_Room\n");
+                    fprintf(file, "ROOM NAME: Attic\n");
 
                     if (count == 0){
                         fprintf(file, "ROOM TYPE: START_ROOM");
@@ -328,13 +329,13 @@ void createRooms(int count){
                 }
                 break;
 
-        case 2: if (fileCheck("./snowan.rooms/Dinning_Hall") == 0){
+        case 2: if (fileCheck("./snowan.rooms/Basement") == 0){
                     
                     //Create file
-                    FILE* file = fopen("./snowan.rooms/Dinning_Hall", "w");
+                    FILE* file = fopen("./snowan.rooms/Basement", "w");
                     
                     //Write to file
-                    fprintf(file, "ROOM NAME: Dinning_Hall\n");
+                    fprintf(file, "ROOM NAME: Basement\n");
 
                     if (count == 0){
                         fprintf(file, "ROOM TYPE: START_ROOM");
@@ -374,13 +375,13 @@ void createRooms(int count){
                 }
                 break;  
  
-        case 4: if (fileCheck("./snowan.rooms/Laboratory") == 0){
+        case 4: if (fileCheck("./snowan.rooms/Lab") == 0){
                     
                     //Create file
-                    FILE* file = fopen("./snowan.rooms/Laboratory", "w");
+                    FILE* file = fopen("./snowan.rooms/Lab", "w");
                     
                     //Write to file
-                    fprintf(file, "ROOM NAME: Laboratory\n");
+                    fprintf(file, "ROOM NAME: Lab\n");
 
                     if (count == 0){
                         fprintf(file, "ROOM TYPE: START_ROOM");
@@ -420,13 +421,13 @@ void createRooms(int count){
                 }
                 break; 
 
-        case 6: if (fileCheck("./snowan.rooms/Sleeping_Quarters") == 0){
+        case 6: if (fileCheck("./snowan.rooms/Bedroom") == 0){
                     
                     //Create file
-                    FILE* file = fopen("./snowan.rooms/Sleeping_Quarters", "w");
+                    FILE* file = fopen("./snowan.rooms/Bedroom", "w");
                     
                     //Write to file
-                    fprintf(file, "ROOM NAME: Sleeping_Quarters\n");
+                    fprintf(file, "ROOM NAME: Bedroom\n");
 
                     if (count == 0){
                         fprintf(file, "ROOM TYPE: START_ROOM");
@@ -443,13 +444,13 @@ void createRooms(int count){
                 }
                 break; 
 
-        case 7:if (fileCheck("./snowan.rooms/Gate_House") == 0){
+        case 7:if (fileCheck("./snowan.rooms/Garden") == 0){
                     
                     //Create file
-                    FILE* file = fopen("./snowan.rooms/Gate_House", "w");
+                    FILE* file = fopen("./snowan.rooms/Garden", "w");
                     
                     //Write to file
-                    fprintf(file, "ROOM NAME: Gate_House\n");
+                    fprintf(file, "ROOM NAME: Garden\n");
 
                     if (count == 0){
                         fprintf(file, "ROOM TYPE: START_ROOM");
@@ -467,13 +468,13 @@ void createRooms(int count){
                 break; 
 
 
-        case 8:if (fileCheck("./snowan.rooms/Great_Hall") == 0){
+        case 8:if (fileCheck("./snowan.rooms/Hallway") == 0){
                    
                  //Create file
-                 FILE* file = fopen("./snowan.rooms/Gate_House", "w");
+                 FILE* file = fopen("./snowan.rooms/Hallway", "w");
                     
                  //Write to file
-                 fprintf(file, "ROOM NAME: Gate_House\n");
+                 fprintf(file, "ROOM NAME: Hallway\n");
 
                  if (count == 0){
                      fprintf(file, "ROOM TYPE: START_ROOM");
@@ -491,13 +492,13 @@ void createRooms(int count){
               break; 
 
 
-        case 9:if (fileCheck("./snowan.rooms/Servants_Quarters") == 0){
+        case 9:if (fileCheck("./snowan.rooms/Yard") == 0){
                     
                     //Create file
-                    FILE* file = fopen("./snowan.rooms/Servants_Quarters", "w");
+                    FILE* file = fopen("./snowan.rooms/Yard", "w");
                     
                    //Write to file
-                    fprintf(file, "ROOM NAME: Servants_Quarters\n");
+                    fprintf(file, "ROOM NAME: Yard\n");
 
                     if (count == 0){
                         fprintf(file, "ROOM TYPE: START_ROOM");
@@ -515,12 +516,12 @@ void createRooms(int count){
                 break; 
 
 
-        case 10:if (fileCheck("./snowan.rooms/Storeroom") == 0){
+        case 10:if (fileCheck("./snowan.rooms/Pantry") == 0){
                     //Create file
-                    FILE* file = fopen("./snowan.rooms/Storeroom", "w");
+                    FILE* file = fopen("./snowan.rooms/Pantry", "w");
                     
                    //Write to file
-                    fprintf(file, "ROOM NAME: Storeroom\n");
+                    fprintf(file, "ROOM NAME: Pantry\n");
 
                     if (count == 0){
                         fprintf(file, "ROOM TYPE: START_ROOM");

@@ -11,9 +11,15 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <pthread.h>
 
 void writeFile(char*);
 int checkConnection(char*, char*);
+void* getTime(void*);
+
+pthread_t tim;
+pthread_mutex_t mutex;
+
 
 int main(){
 
@@ -23,19 +29,23 @@ int main(){
     char compareFile[7][100];
     char completionArray[10][100];
     char room[50];
+    char timeStr[50];
     int dirTime = -1;
     int startRoom;
     int endRoom;
     int roomNum;
     int completionNum = 0;
+    int err;
     int count = 0;
     FILE* file;
+    FILE* fp;
     DIR* d;
     time_t t1;
     time_t t2;
     struct dirent *dir;
     struct stat dirInfo;
     
+
     
     //read directorys in file
     //Refferenced from block 2 notes
@@ -147,6 +157,33 @@ int main(){
             count = 0;
 
 
+        } else if (strcmp(room, "time") == 0) {
+           
+            //Call thread
+            err = pthread_create(&(tim), NULL, &getTime, NULL);
+            if (err != 0){
+                printf("\ncant create thread :[%s]", strerror(err));
+            }
+
+            pthread_join(tim, NULL);
+            
+
+            //Read from file
+            fp = fopen("currentTime.txt", "r");
+            printf("\n");
+
+            while (fscanf(fp, "%s", timeStr) == 1){ 
+            
+                printf("%s", timeStr); 
+            }
+
+            if (feof(fp)){
+                printf("\n");
+            }
+
+            writeFile(fileArray[roomNum]);
+        
+        
         } else {
             printf("\nHUH? I DON'T UNDERSTAND THAT ROOM. TRY AGAIN.\n");
 
@@ -168,6 +205,37 @@ int main(){
     }
 
     return 0;
+}
+
+
+void* getTime(void *arg){
+    
+    pthread_mutex_lock(&mutex);
+
+    char timeStr[50];
+    time_t rawTime;
+    struct tm *timeInfo;
+    FILE* fp;
+
+    time(&rawTime);
+    timeInfo = localtime(&rawTime);
+
+    strftime(timeStr, sizeof(timeStr), "%1:%M%P, %A, %B, %d, %Y", timeInfo);
+   
+    fp = fopen("currentTime.txt", "w+");
+
+    if (fp == NULL){
+        printf("Failed to open file");
+    }
+
+    fprintf(fp, "%s", timeStr);
+    fclose(fp);
+
+
+    pthread_mutex_unlock(&mutex);
+
+    return NULL;
+
 }
 
 

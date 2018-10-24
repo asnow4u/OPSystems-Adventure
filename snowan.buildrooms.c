@@ -164,8 +164,8 @@ int main(){
             
             while (i < connectionNum + 1){
                 
-                //Compare random room ro connecting rooms and check number of connections for potential reroll
-                if (strcmp(connectionArray[i], fileArray[randomRoom2]) == 0 || getConnectionNum(fileArray[randomRoom2]) > 5 || randomRoom1 == randomRoom2){
+                //Compare random room to connecting rooms and check number of connections for potential reroll
+                if (strcmp(connectionArray[i], fileArray[randomRoom2]) == 0 && getConnectionNum(fileArray[randomRoom2]) > 5 && randomRoom1 == randomRoom2){
                                  
                    i = 0;
                    randomRoom2 = rand() %7;
